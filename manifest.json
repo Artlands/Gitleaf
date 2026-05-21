@@ -5,10 +5,7 @@
   "description": "Sync Overleaf projects with GitHub repositories",
   "permissions": [
     "storage",
-    "alarms",
-    "activeTab",
-    "scripting",
-    "identity"
+    "activeTab"
   ],
   "host_permissions": [
     "https://www.overleaf.com/*",
