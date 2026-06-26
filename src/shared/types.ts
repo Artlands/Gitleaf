@@ -75,12 +75,20 @@ export interface PopupMessage {
     | 'GET_LINK_STATUS'
     | 'PUSH'
     | 'PULL'
+    | 'PREVIEW_PUSH'
+    | 'PREVIEW_PULL'
     | 'SYNC'
     | 'LINK_GITHUB'
     | 'GET_GITHUB_REPOS'
     | 'SET_GITHUB_TOKEN'
     | 'GET_AUTH_STATUS';
   payload?: Record<string, unknown>;
+}
+
+export interface SyncPreview {
+  added: string[];
+  modified: string[];
+  deleted: string[];
 }
 
 export interface ServiceWorkerResponse {
