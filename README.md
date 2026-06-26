@@ -2,7 +2,7 @@
 
 > Sync Overleaf projects with GitHub repositories — no premium Overleaf subscription required.
 
-Gitleaf is a Chrome extension that bridges [Overleaf](https://www.overleaf.com) (online LaTeX editor) and [GitHub](https://github.com). It lets you push your Overleaf project to a GitHub repo (or a subfolder of one) and pull changes back — all from your browser, with no external server.
+Gitleaf is a Chrome extension that bridges [Overleaf](https://www.overleaf.com) (online LaTeX editor) and [GitHub](https://github.com). It lets you preview and push your Overleaf project to a GitHub repo (or a subfolder of one), and preview and pull files back into Overleaf — all from your browser, with no external server.
 
 This is especially useful for free-tier Overleaf users who don't have access to Overleaf's built-in Git bridge, or for users who want to map an Overleaf project to a *subfolder* of an existing repo.
 
@@ -12,6 +12,7 @@ This is especially useful for free-tier Overleaf users who don't have access to 
 
 - **Push** — upload files from Overleaf to a GitHub repository as a clean commit
 - **Pull** — download files from a GitHub repository into your Overleaf project
+- **Preview before write** — review added, modified, and deleted files before confirming Push or Pull
 - **Subfolder mapping** — sync a specific subfolder of a repo (not just the whole repo)
 - **Ignore patterns** — skip files matching gitignore-style patterns
 - **GitHub PAT authentication** — fine-grained or classic personal access tokens
@@ -23,8 +24,9 @@ This is especially useful for free-tier Overleaf users who don't have access to 
 2. Open an Overleaf project page.
 3. Click the Gitleaf icon in your Chrome toolbar.
 4. Enter a [GitHub Personal Access Token](https://github.com/settings/tokens) with `Contents: Read and write` permissions.
-5. Link your Overleaf project to a GitHub repository.
-6. Click **Push** to sync from Overleaf to GitHub, or **Pull** to sync from GitHub to Overleaf.
+5. Link your Overleaf project to a GitHub repository, branch, and optional subfolder.
+6. Click **Push** to preview Overleaf-to-GitHub changes, or **Pull** to preview GitHub-to-Overleaf changes.
+7. Confirm the preview dialog to apply the changes.
 
 ### Getting a GitHub Token
 
@@ -41,16 +43,16 @@ This is especially useful for free-tier Overleaf users who don't have access to 
 ```
 src/
   background/
-    service-worker.ts       # Main extension orchestrator
-    sync-engine.ts          # Push/pull change detection
+    service-worker.ts       # Message router and sync orchestrator
+    sync-engine.ts          # Push/pull change detection and ignore matching
     github-client.ts        # GitHub REST API client + token validation
-    overleaf-client.ts      # Overleaf zip download
+    overleaf-client.ts      # Overleaf ZIP download and write helpers
     storage.ts              # chrome.storage wrapper
   content/
     overleaf-content.ts     # Extracts project metadata from Overleaf pages
   ui/
-    popup/                  # React popup UI (Push/Pull buttons, linking)
-    options/                # Settings page
+    popup/                  # React popup UI (token, linking, previews, Push/Pull)
+    options/                # Settings and linked-project management UI
   shared/
     types.ts                # Shared TypeScript types
     hash.ts                 # SHA-1 hashing utilities
@@ -98,24 +100,27 @@ npm run build
 
 1. The content script reads the Overleaf project ID and CSRF token from the page.
 2. The service worker downloads the project as a ZIP archive via Overleaf's internal API.
-3. Files are extracted, SHA-1 hashes are computed, and changes are detected against the last sync state.
-4. Changed files are committed to the configured GitHub branch via the Git Data API.
-5. The sync manifest is updated for next comparison.
+3. Files are extracted, SHA-1 hashes are computed, ignore patterns are applied, and changes are detected against the last sync state.
+4. The popup shows a preview of added, modified, and deleted files.
+5. After confirmation, changed files are committed to the configured GitHub branch via the Git Data API.
+6. The sync manifest is updated for next comparison.
 
 ### Pull (GitHub → Overleaf)
 
 1. The service worker reads the repository tree from GitHub.
-2. File hashes are compared against the sync manifest.
-3. Changed text files (`.tex`, `.bib`, `.sty`, `.cls`) are written as Overleaf docs.
-4. Changed binary files are uploaded to Overleaf.
-5. Files deleted on GitHub are removed from Overleaf.
+2. If a subfolder is configured, only files under that GitHub prefix are considered.
+3. File hashes are compared against the sync manifest.
+4. The popup shows a preview of added, modified, and deleted files.
+5. After confirmation, files are written to Overleaf and deleted files are removed.
+6. The sync manifest is updated for next comparison.
 
 ## Known Limitations
 
-- **No automatic sync yet** — Push and Pull are manual. Autosync is planned.
-- **No bidirectional sync** — Use Push or Pull explicitly. Three-way conflict handling is future work.
+- **No automatic sync** — Push and Pull are manual.
+- **No bidirectional Sync mode** — Use Push or Pull explicitly. Three-way conflict handling is future work.
+- **No conflict UI yet** — Concurrent edits on both sides require manual resolution before syncing.
 - **Overleaf internal endpoints** — Pull uses Overleaf web-editor endpoints that may change. If Pull fails, try refreshing the Overleaf tab and retrying.
-- **No conflict UI** — Concurrent edits on both sides require manual resolution.
+- **File size limit** — GitHub blobs over 100 MB are skipped.
 
 ## Security
 
