@@ -295,4 +295,65 @@ describe('Sync engine', () => {
       expect(filtered['main.log']).toBeUndefined();
     });
   });
+
+  describe('sync preview shape', () => {
+    // The PREVIEW_PUSH / PREVIEW_PULL service-worker handlers reduce the full
+    // change set down to plain path arrays before sending to the popup. This
+    // verifies the projection used there is correct end-to-end.
+    it('projects push changes into add/modify/delete path arrays', () => {
+      const manifest: SyncManifest = {
+        overleafProjectId: 'proj123',
+        github: { owner: 'alice', repo: 'thesis', branch: 'main' },
+        lastSync: '2026-05-11T00:00:00Z',
+        files: {
+          'main.tex': { ovHash: 'sha1:abc123', ghHash: 'sha1:abc123', ghSha: 'old' },
+          'gone.tex': { ovHash: 'sha1:gone', ghHash: 'sha1:gone', ghSha: 'old' },
+        },
+      };
+      const updated = {
+        'main.tex': {
+          content: new TextEncoder().encode('\\documentclass{report}'),
+          hash: 'sha1:CHANGED',
+        },
+        'new.tex': {
+          content: new TextEncoder().encode('new'),
+          hash: 'sha1:new',
+        },
+      };
+      const changes = detectPushChanges(updated, manifest);
+      const preview = {
+        added: changes.added.map((f) => f.path),
+        modified: changes.modified.map((f) => f.path),
+        deleted: changes.deleted,
+      };
+
+      expect(preview).toEqual({
+        added: ['new.tex'],
+        modified: ['main.tex'],
+        deleted: ['gone.tex'],
+      });
+    });
+
+    it('returns empty arrays when there are no changes', () => {
+      const manifest: SyncManifest = {
+        overleafProjectId: 'proj123',
+        github: { owner: 'alice', repo: 'thesis', branch: 'main' },
+        lastSync: '2026-05-11T00:00:00Z',
+        files: {
+          'main.tex': { ovHash: 'sha1:abc123', ghHash: 'sha1:abc123', ghSha: 'sha' },
+        },
+      };
+      const same = {
+        'main.tex': {
+          content: new TextEncoder().encode('\\documentclass{article}'),
+          hash: 'sha1:abc123',
+        },
+      };
+      const changes = detectPushChanges(same, manifest);
+
+      expect(changes.added).toHaveLength(0);
+      expect(changes.modified).toHaveLength(0);
+      expect(changes.deleted).toHaveLength(0);
+    });
+  });
 });

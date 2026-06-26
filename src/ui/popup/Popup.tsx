@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
-import { PopupMessage, ServiceWorkerResponse, LinkConfig } from '@shared/types';
+import { PopupMessage, ServiceWorkerResponse, LinkConfig, SyncPreview } from '@shared/types';
 import './popup.css';
 
 /* =============================================
@@ -219,6 +219,11 @@ export const Popup: React.FC = () => {
   const [syncing, setSyncing] = useState<'push' | 'pull' | 'link' | 'token' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showLinkDialog, setShowLinkDialog] = useState(false);
+  const [pendingPreview, setPendingPreview] = useState<{
+    direction: 'push' | 'pull';
+    preview: SyncPreview;
+  } | null>(null);
+  const [previewLoading, setPreviewLoading] = useState<'push' | 'pull' | null>(null);
   const [activeTab, setActiveTab] = useState<ActiveOverleafTab | null>(null);
   const [authenticated, setAuthenticated] = useState(false);
   const [githubLogin, setGithubLogin] = useState<string | null>(null);
@@ -347,15 +352,68 @@ export const Popup: React.FC = () => {
 
   const handlePush = async () => {
     if (!linkStatus?.linked) { setError('Project must be linked first'); return; }
-    setSyncing('push');
+    setPreviewLoading('push');
     setError(null);
     try {
-      const message: PopupMessage = { type: 'PUSH', payload: activeTab as unknown as Record<string, unknown> };
+      const message: PopupMessage = {
+        type: 'PREVIEW_PUSH',
+        payload: activeTab as unknown as Record<string, unknown>,
+      };
       const response = await chrome.runtime.sendMessage(message) as ServiceWorkerResponse;
       if (response.success) {
+        const data = response.data as { preview: SyncPreview };
+        setPendingPreview({ direction: 'push', preview: data.preview });
+      } else {
+        setError(response.error || 'Could not preview push');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Connection error');
+    } finally {
+      setPreviewLoading(null);
+    }
+  };
+
+  const handlePull = async () => {
+    if (!linkStatus?.linked) { setError('Project must be linked first'); return; }
+    setPreviewLoading('pull');
+    setError(null);
+    try {
+      const freshTab = await refreshActiveTabMeta();
+      const message: PopupMessage = {
+        type: 'PREVIEW_PULL',
+        payload: freshTab as unknown as Record<string, unknown>,
+      };
+      const response = await chrome.runtime.sendMessage(message) as ServiceWorkerResponse;
+      if (response.success) {
+        const data = response.data as { preview: SyncPreview };
+        setPendingPreview({ direction: 'pull', preview: data.preview });
+      } else {
+        setError(response.error || 'Could not preview pull');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Connection error');
+    } finally {
+      setPreviewLoading(null);
+    }
+  };
+
+  const confirmSync = async () => {
+    if (!pendingPreview) return;
+    const direction = pendingPreview.direction;
+    setSyncing(direction);
+    setError(null);
+    try {
+      const freshTab = direction === 'pull' ? await refreshActiveTabMeta() : activeTab;
+      const message: PopupMessage = {
+        type: direction === 'push' ? 'PUSH' : 'PULL',
+        payload: freshTab as unknown as Record<string, unknown>,
+      };
+      const response = await chrome.runtime.sendMessage(message) as ServiceWorkerResponse;
+      if (response.success) {
+        setPendingPreview(null);
         await checkLinkStatus();
       } else {
-        setError(response.error || 'Push failed');
+        setError(response.error || `${direction} failed`);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Connection error');
@@ -364,25 +422,7 @@ export const Popup: React.FC = () => {
     }
   };
 
-  const handlePull = async () => {
-    if (!linkStatus?.linked) { setError('Project must be linked first'); return; }
-    setSyncing('pull');
-    setError(null);
-    try {
-      const freshTab = await refreshActiveTabMeta();
-      const message: PopupMessage = { type: 'PULL', payload: freshTab as unknown as Record<string, unknown> };
-      const response = await chrome.runtime.sendMessage(message) as ServiceWorkerResponse;
-      if (response.success) {
-        await checkLinkStatus();
-      } else {
-        setError(response.error || 'Pull failed');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Connection error');
-    } finally {
-      setSyncing(null);
-    }
-  };
+  const cancelPreview = () => setPendingPreview(null);
 
   const handleLink = async (owner: string, repo: string, branch: string, subPath: string) => {
     setSyncing('link');
@@ -559,24 +599,28 @@ export const Popup: React.FC = () => {
         <div className="button-group">
           <button
             onClick={handlePush}
-            disabled={syncing !== null}
+            disabled={syncing !== null || previewLoading !== null}
             className="btn btn-primary"
-            title="Push Overleaf changes to GitHub"
+            title="Preview and push Overleaf changes to GitHub"
           >
             <SyncIcon />
-            {syncing === 'push' ? 'Syncing...' : 'Push'}
+            {previewLoading === 'push' ? 'Checking...' : syncing === 'push' ? 'Pushing...' : 'Push'}
           </button>
           <button
             onClick={handlePull}
-            disabled={syncing !== null}
+            disabled={syncing !== null || previewLoading !== null}
             className="btn btn-secondary"
-            title="Pull GitHub changes to Overleaf"
+            title="Preview and pull GitHub changes to Overleaf"
           >
-            {syncing === 'pull' ? 'Syncing...' : 'Pull'}
+            {previewLoading === 'pull' ? 'Checking...' : syncing === 'pull' ? 'Pulling...' : 'Pull'}
           </button>
         </div>
         <div className="footer-buttons">
-          <button onClick={() => setShowLinkDialog(true)} disabled={syncing !== null} className="btn-text">
+          <button
+            onClick={() => setShowLinkDialog(true)}
+            disabled={syncing !== null || previewLoading !== null}
+            className="btn-text"
+          >
             Change repository
           </button>
         </div>
@@ -589,7 +633,111 @@ export const Popup: React.FC = () => {
           loading={syncing === 'link'}
         />
       )}
+
+      {pendingPreview && (
+        <SyncPreviewDialog
+          direction={pendingPreview.direction}
+          preview={pendingPreview.preview}
+          loading={syncing === pendingPreview.direction}
+          onConfirm={confirmSync}
+          onCancel={cancelPreview}
+        />
+      )}
     </PopupShell>
+  );
+};
+
+/* =============================================
+   Sync Preview Dialog
+   ============================================= */
+
+interface SyncPreviewDialogProps {
+  direction: 'push' | 'pull';
+  preview: SyncPreview;
+  loading: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+const SyncPreviewDialog: React.FC<SyncPreviewDialogProps> = ({
+  direction,
+  preview,
+  loading,
+  onConfirm,
+  onCancel,
+}) => {
+  const total = preview.added.length + preview.modified.length + preview.deleted.length;
+  const headline =
+    direction === 'push'
+      ? 'Push these changes to GitHub?'
+      : 'Apply these changes from GitHub to Overleaf?';
+  const subline =
+    direction === 'push'
+      ? 'Files will be committed to the linked branch.'
+      : 'Files will be written to your Overleaf project. Deletions cannot be undone.';
+
+  return (
+    <div className="dialog-overlay">
+      <div className="dialog sync-preview-dialog">
+        <div className="dialog-header">
+          <h2>{headline}</h2>
+          <p>{subline}</p>
+        </div>
+
+        <div className="dialog-body">
+          {total === 0 ? (
+            <p className="preview-empty">No changes detected — nothing to {direction}.</p>
+          ) : (
+            <>
+              <div className="preview-summary">
+                <span className="preview-pill preview-pill--add">+{preview.added.length} added</span>
+                <span className="preview-pill preview-pill--mod">~{preview.modified.length} modified</span>
+                <span className="preview-pill preview-pill--del">−{preview.deleted.length} deleted</span>
+              </div>
+              <div className="preview-list">
+                {preview.added.map((p) => (
+                  <div key={`a-${p}`} className="preview-row">
+                    <span className="preview-marker preview-marker--add">+</span>
+                    <span className="preview-path">{p}</span>
+                  </div>
+                ))}
+                {preview.modified.map((p) => (
+                  <div key={`m-${p}`} className="preview-row">
+                    <span className="preview-marker preview-marker--mod">~</span>
+                    <span className="preview-path">{p}</span>
+                  </div>
+                ))}
+                {preview.deleted.map((p) => (
+                  <div key={`d-${p}`} className="preview-row">
+                    <span className="preview-marker preview-marker--del">−</span>
+                    <span className="preview-path">{p}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        <div className="dialog-buttons">
+          <button onClick={onCancel} disabled={loading} className="btn btn-secondary">
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={loading || total === 0}
+            className="btn btn-primary"
+          >
+            {loading
+              ? direction === 'push'
+                ? 'Pushing...'
+                : 'Pulling...'
+              : direction === 'push'
+                ? 'Confirm Push'
+                : 'Confirm Pull'}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
 

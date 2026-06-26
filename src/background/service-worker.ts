@@ -146,6 +146,20 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
     return true;
   }
 
+  if (typedMessage.type === 'PREVIEW_PUSH') {
+    handlePreviewPush(getMessageTabId(sender, typedMessage.payload), typedMessage.payload).then(
+      (response) => sendResponse(response)
+    );
+    return true;
+  }
+
+  if (typedMessage.type === 'PREVIEW_PULL') {
+    handlePreviewPull(getMessageTabId(sender, typedMessage.payload), typedMessage.payload).then(
+      (response) => sendResponse(response)
+    );
+    return true;
+  }
+
   if (typedMessage.type === 'SYNC') {
     sendResponse({
       success: false,
@@ -497,6 +511,110 @@ async function handlePull(
     return {
       success: false,
       error: errorMsg,
+    };
+  }
+}
+
+async function handlePreviewPush(
+  tabId: number,
+  payload?: Record<string, unknown>
+): Promise<ServiceWorkerResponse> {
+  try {
+    const projectMeta = getProjectMeta(tabId, payload);
+    if (!projectMeta) {
+      return { success: false, error: 'No project found on this tab' };
+    }
+
+    const linkConfig = await Storage.getLinkConfig(projectMeta.projectId);
+    if (!linkConfig) {
+      return { success: false, error: 'Project is not linked to GitHub' };
+    }
+
+    const currentFiles = await OverleafClient.getProjectFiles(projectMeta.projectId);
+    const ignorePatterns = await Storage.getIgnorePatterns();
+    const ignoredFilteredFiles = SyncEngine.filterIgnoredFiles(currentFiles, ignorePatterns);
+    const { valid: validFiles } = OverleafClient.filterLargeFiles(ignoredFilteredFiles);
+
+    const manifest = await Storage.getSyncManifest(projectMeta.projectId);
+    const changes = SyncEngine.detectPushChanges(validFiles, manifest);
+
+    return {
+      success: true,
+      data: {
+        preview: {
+          added: changes.added.map((f) => f.path),
+          modified: changes.modified.map((f) => f.path),
+          deleted: changes.deleted,
+        },
+      },
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+async function handlePreviewPull(
+  tabId: number,
+  payload?: Record<string, unknown>
+): Promise<ServiceWorkerResponse> {
+  try {
+    const projectMeta = getProjectMeta(tabId, payload);
+    if (!projectMeta) {
+      return { success: false, error: 'No project found on this tab' };
+    }
+
+    const linkConfig = await Storage.getLinkConfig(projectMeta.projectId);
+    if (!linkConfig) {
+      return { success: false, error: 'Project is not linked to GitHub' };
+    }
+
+    const githubToken = await Storage.getGitHubToken();
+    if (!githubToken) {
+      return { success: false, error: 'Not authenticated with GitHub' };
+    }
+
+    const remoteFiles = await GitHubClient.getRepositoryFiles(
+      githubToken.accessToken,
+      linkConfig.github.owner,
+      linkConfig.github.repo,
+      linkConfig.github.branch,
+      normalizeSubPath(linkConfig.github.subPath)
+    );
+    const ignorePatterns = await Storage.getIgnorePatterns();
+    const filteredRemoteFiles: GitHubClient.GitHubFileTreeWithHashes = {};
+    for (const [path, file] of Object.entries(remoteFiles)) {
+      if (!ignorePatterns.some((pattern) => SyncEngine.matchesIgnorePattern(path, pattern))) {
+        filteredRemoteFiles[path] = file;
+      }
+    }
+
+    const validRemoteFiles: GitHubClient.GitHubFileTreeWithHashes = {};
+    for (const [path, file] of Object.entries(filteredRemoteFiles)) {
+      if (file.content.length <= 100 * 1024 * 1024) {
+        validRemoteFiles[path] = file;
+      }
+    }
+
+    const manifest = await Storage.getSyncManifest(projectMeta.projectId);
+    const changes = SyncEngine.detectPullChanges(validRemoteFiles, manifest);
+
+    return {
+      success: true,
+      data: {
+        preview: {
+          added: changes.added.map((f) => f.path),
+          modified: changes.modified.map((f) => f.path),
+          deleted: changes.deleted,
+        },
+      },
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }

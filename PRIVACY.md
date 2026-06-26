@@ -1,6 +1,6 @@
 # Privacy Policy for Gitleaf
 
-**Last updated:** May 14, 2026
+**Last updated:** June 26, 2026
 
 Gitleaf is a Chrome extension that synchronizes files between Overleaf projects and GitHub repositories. This privacy policy explains how Gitleaf handles your data.
 
@@ -12,10 +12,10 @@ Gitleaf **does not collect, store, or transmit any personal data** to any server
 
 ### What is stored locally
 
-- **GitHub Personal Access Token** — stored in `chrome.storage.local`, encrypted by Chrome at rest. This token is used exclusively to authenticate API requests to GitHub on your behalf.
-- **Sync manifests** — SHA-1 hashes of your synced files, stored in `chrome.storage.local`. These are used to detect which files have changed between sync operations.
-- **Link configurations** — mappings between Overleaf project IDs and GitHub repository paths, stored in `chrome.storage.local`.
-- **User preferences** — ignore patterns and default branch settings, stored in `chrome.storage.sync` (synced across your Chrome profiles).
+- **GitHub Personal Access Token** — stored under `github_token` in `chrome.storage.local`, encrypted by Chrome at rest. This token is used exclusively to authenticate API requests to GitHub on your behalf.
+- **Sync manifests** — SHA-1 hashes of your synced files, stored under `sync_manifests` in `chrome.storage.local`. These are used to detect which files have changed between sync operations.
+- **Link configurations** — mappings between Overleaf project IDs and GitHub repository paths, stored under `link_configs` in `chrome.storage.local`.
+- **User preferences** — ignore patterns, default branch settings, and autosync interval settings are stored in `chrome.storage.sync` (synced across your Chrome profiles when Chrome sync is enabled).
 
 ### What is never stored
 
@@ -54,7 +54,7 @@ Gitleaf does **not** communicate with any analytics service, error tracker, or d
 ## Third-Party Services
 
 ### GitHub
-Gitleaf uses the GitHub REST API under the terms of [GitHub's Privacy Policy](https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement). You must provide a GitHub Personal Access Token with appropriate scopes (`repo`, `read:user`) for the extension to function.
+Gitleaf uses the GitHub REST API under the terms of [GitHub's Privacy Policy](https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement). You must provide a GitHub Personal Access Token with repository contents read/write access. Fine-grained tokens scoped to selected repositories are recommended; classic tokens with the `repo` scope also work.
 
 ### Overleaf
 Gitleaf interacts with Overleaf through the same endpoints the Overleaf web UI uses. All actions are performed within your existing browser session. Your use of Overleaf is governed by [Overleaf's Privacy Policy](https://www.overleaf.com/legal/privacy).
@@ -63,7 +63,7 @@ Gitleaf interacts with Overleaf through the same endpoints the Overleaf web UI u
 
 You can:
 
-- **Revoke** your GitHub token at any time in your [GitHub settings](https://github.com/settings/applications)
+- **Revoke** your GitHub token at any time in your [GitHub token settings](https://github.com/settings/tokens)
 - **Remove** all stored data by going to `chrome://extensions/` → Gitleaf → "Clear storage" or uninstalling the extension
 - **Uninstall** the extension completely, which removes all locally stored data
 
