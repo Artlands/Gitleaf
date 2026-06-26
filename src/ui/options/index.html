@@ -5,114 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Gitleaf Settings</title>
     <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-
+      * { margin: 0; padding: 0; box-sizing: border-box; }
       body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-        background: #f6f8fa;
-        padding: 24px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto,
+          Oxygen, Ubuntu, Cantarell, sans-serif;
+        background: var(--color-bg, #f8fafc);
+        color: var(--color-text-primary, #0f172a);
+        -webkit-font-smoothing: antialiased;
       }
-
-      .container {
-        max-width: 600px;
-        margin: 0 auto;
-        background: white;
-        border-radius: 8px;
-        padding: 24px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      }
-
-      h1 {
-        font-size: 24px;
-        margin-bottom: 24px;
-        color: #333;
-      }
-
-      .section {
-        margin-bottom: 32px;
-        padding-bottom: 24px;
-        border-bottom: 1px solid #e0e0e0;
-      }
-
-      .section:last-child {
-        border-bottom: none;
-      }
-
-      h2 {
-        font-size: 16px;
-        font-weight: 600;
-        margin-bottom: 16px;
-        color: #333;
-      }
-
-      .phase-badge {
-        display: inline-block;
-        background: #f0f0f0;
-        color: #666;
-        padding: 6px 12px;
-        border-radius: 4px;
-        font-size: 12px;
-        margin-left: 8px;
-      }
-
-      .coming-soon {
-        padding: 16px;
-        background: #f6f8fa;
-        border: 1px solid #e0e0e0;
-        border-radius: 6px;
-        color: #666;
-        font-size: 13px;
-        text-align: center;
-      }
+      #root { min-height: 100vh; }
     </style>
   </head>
   <body>
-    <div class="container">
-      <h1>Gitleaf Settings</h1>
-
-      <div class="section">
-        <h2>
-          GitHub Account
-          <span class="phase-badge">Phase 2</span>
-        </h2>
-        <div class="coming-soon">
-          Connect / disconnect GitHub OAuth, manage scopes, and set up Personal Access Tokens.
-        </div>
-      </div>
-
-      <div class="section">
-        <h2>
-          Defaults
-          <span class="phase-badge">Phase 2</span>
-        </h2>
-        <div class="coming-soon">
-          Default branch, autosync interval, and default sync direction.
-        </div>
-      </div>
-
-      <div class="section">
-        <h2>
-          Ignore Patterns
-          <span class="phase-badge">Phase 2</span>
-        </h2>
-        <div class="coming-soon">
-          Gitignore-style patterns to exclude from sync (e.g., *.log, .vscode/)
-        </div>
-      </div>
-
-      <div class="section">
-        <h2>
-          Advanced
-          <span class="phase-badge">Phase 4</span>
-        </h2>
-        <div class="coming-soon">
-          Clear all manifests, export logs, and other advanced settings.
-        </div>
-      </div>
-    </div>
+    <div id="root"></div>
+    <script type="module" src="Options.tsx"></script>
   </body>
 </html>
