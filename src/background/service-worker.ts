@@ -436,18 +436,9 @@ async function handlePull(
     }
 
     const manifest = await Storage.getSyncManifest(projectMeta.projectId);
+    // Apply exactly the change set shown in the PREVIEW_PULL dialog.
     const changes = SyncEngine.detectPullChanges(validRemoteFiles, manifest);
-    const forcedPullChanges = {
-      added: Object.entries(validRemoteFiles).map(([path, file]) => ({
-        path,
-        content: file.content,
-        ghSha: file.ghSha,
-        hash: file.hash,
-      })),
-      modified: [],
-      deleted: changes.deleted,
-    };
-    const validation = SyncEngine.validateChangesForPull(forcedPullChanges);
+    const validation = SyncEngine.validateChangesForPull(changes);
     if (!validation.valid) {
       return {
         success: false,
@@ -456,9 +447,9 @@ async function handlePull(
     }
 
     if (
-      forcedPullChanges.added.length === 0 &&
-      forcedPullChanges.modified.length === 0 &&
-      forcedPullChanges.deleted.length === 0
+      changes.added.length === 0 &&
+      changes.modified.length === 0 &&
+      changes.deleted.length === 0
     ) {
       return {
         success: true,
@@ -470,7 +461,7 @@ async function handlePull(
     }
 
     const filesToApply: Record<string, { content: Uint8Array }> = {};
-    for (const file of [...forcedPullChanges.added, ...forcedPullChanges.modified]) {
+    for (const file of [...changes.added, ...changes.modified]) {
       filesToApply[file.path] = { content: file.content };
     }
 
@@ -481,7 +472,7 @@ async function handlePull(
       projectMeta.userId,
       projectMeta.rootFolder,
       filesToApply,
-      forcedPullChanges.deleted
+      changes.deleted
     );
 
     const nextManifest = SyncEngine.createManifestAfterPull(

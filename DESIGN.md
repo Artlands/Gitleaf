@@ -148,8 +148,8 @@ Push writes one Git commit per confirmed operation. Commit messages include a `G
 3. If a subfolder is configured, only files under that prefix are considered.
 4. GitHub blobs are downloaded and SHA-1 hashes are computed.
 5. Ignore patterns and the 100 MB file limit are applied.
-6. `detectPullChanges` compares current GitHub files with the manifest for preview.
-7. On confirmation, the service worker applies GitHub files to Overleaf.
+6. `detectPullChanges` compares current GitHub files with the manifest.
+7. On confirmation, the service worker applies the same detected change set to Overleaf.
 8. The Overleaf client creates missing folders, uploads files, deletes removed entities, and refreshes project-tree data when cached metadata is stale.
 9. A new manifest is stored.
 
@@ -223,9 +223,7 @@ The current extension does not request `identity`, `alarms`, `tabs`, or `<all_ur
 
 Near-term work:
 
-- Align options-page storage keys with `storage.ts`.
 - Add unlink and token disconnect flows through the service worker.
-- Improve pull semantics so preview and apply use exactly the same change set.
 - Add conflict detection for cases where both sides changed since the manifest.
 
 Later work:

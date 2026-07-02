@@ -67,6 +67,17 @@ export async function setSyncManifest(manifest: SyncManifest): Promise<void> {
 }
 
 /**
+ * Remove sync manifest for a project (when unlinking)
+ */
+export async function removeSyncManifest(projectId: string): Promise<void> {
+  const manifests = await getSyncManifests();
+  delete manifests[projectId];
+  await chrome.storage.local.set({
+    [STORAGE_KEYS.SYNC_MANIFESTS]: manifests,
+  });
+}
+
+/**
  * Get all link configs
  */
 export async function getLinkConfigs(): Promise<Record<string, LinkConfig>> {
@@ -136,6 +147,15 @@ export async function setAutoSyncInterval(minutes: number): Promise<void> {
   await chrome.storage.sync.set({
     [STORAGE_KEYS.AUTOSYNC_INTERVAL]: minutes,
   });
+}
+
+/**
+ * Get the raw user-entered ignore patterns text (newline-separated),
+ * without the built-in defaults. Used by the options page textarea.
+ */
+export async function getIgnorePatternsText(): Promise<string> {
+  const result = await chrome.storage.sync.get(STORAGE_KEYS.IGNORE_PATTERNS);
+  return (result[STORAGE_KEYS.IGNORE_PATTERNS] || '') as string;
 }
 
 /**

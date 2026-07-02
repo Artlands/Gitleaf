@@ -338,7 +338,7 @@ describe('Overleaf client', () => {
       calls.push({ url, init });
 
       if (url.includes('/download/zip')) {
-        return new Response(zipSync({ 'figures/figure1.pdf': new Uint8Array([1, 2, 3]) }));
+        return new Response(new Uint8Array(zipSync({ 'figures/figure1.pdf': new Uint8Array([1, 2, 3]) })));
       }
 
       if (url.endsWith('/join')) {
@@ -942,7 +942,7 @@ describe('Overleaf client', () => {
       calls.push({ url, init });
 
       if (url.includes('/download/zip')) {
-        return new Response(zipSync({ 'main.tex': content }));
+        return new Response(new Uint8Array(zipSync({ 'main.tex': content })));
       }
 
       if (url.endsWith('/join')) {
@@ -1004,7 +1004,7 @@ describe('Overleaf client', () => {
       calls.push({ url });
 
       if (url.includes('/download/zip')) {
-        return new Response(zipSync({ 'main.tex': oldContent }));
+        return new Response(new Uint8Array(zipSync({ 'main.tex': oldContent })));
       }
 
       if (url.endsWith('/join')) {
@@ -1100,7 +1100,7 @@ describe('Overleaf client', () => {
       calls.push({ url, init });
 
       if (url.includes('/download/zip')) {
-        return new Response(zipSync({ 'main.tex': new TextEncoder().encode('old') }));
+        return new Response(new Uint8Array(zipSync({ 'main.tex': new TextEncoder().encode('old') })));
       }
 
       if (url.endsWith('/join')) {
@@ -1624,7 +1624,7 @@ describe('Overleaf client', () => {
 
       if (url.includes('/download/zip')) {
         const { zipSync } = await import('fflate');
-        return new Response(zipSync({ 'main.tex': mainContent, 'figures/figure1.pdf': figContent }));
+        return new Response(new Uint8Array(zipSync({ 'main.tex': mainContent, 'figures/figure1.pdf': figContent })));
       }
       if (url.endsWith('/join')) {
         return jsonResponse({ project: { rootFolder: [rootFolderWithFiguresAndDocs] } });
@@ -1675,7 +1675,7 @@ describe('Overleaf client', () => {
 
       if (url.includes('/download/zip')) {
         const { zipSync } = await import('fflate');
-        return new Response(zipSync({ 'main.tex': mainContent, 'figures/figure1.pdf': figContent }));
+        return new Response(new Uint8Array(zipSync({ 'main.tex': mainContent, 'figures/figure1.pdf': figContent })));
       }
       if (url.endsWith('/join')) {
         return jsonResponse({ project: { rootFolder: [rootFolderWithFiguresAndDocs] } });

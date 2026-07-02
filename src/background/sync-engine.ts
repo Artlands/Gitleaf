@@ -36,14 +36,16 @@ export function matchesIgnorePattern(path: string, pattern: string): boolean {
     return false;
   }
 
+  const escapePattern = (pattern: string): string =>
+    pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[^/]*');
+
   if (normalizedPattern.endsWith('/')) {
-    return normalizedPath.startsWith(normalizedPattern);
+    // Directory pattern: match the directory at any depth, like gitignore
+    const escapedDir = escapePattern(normalizedPattern.slice(0, -1));
+    return new RegExp(`(^|/)${escapedDir}/`).test(normalizedPath);
   }
 
-  const escaped = normalizedPattern
-    .replace(/[.+^${}()|[\]\\]/g, '\\$&')
-    .replace(/\*/g, '[^/]*');
-  const regex = new RegExp(`(^|/)${escaped}$`);
+  const regex = new RegExp(`(^|/)${escapePattern(normalizedPattern)}$`);
   return regex.test(normalizedPath);
 }
 
