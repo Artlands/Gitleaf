@@ -788,13 +788,16 @@ const LinkDialog: React.FC<LinkDialogProps> = ({ onLink, onCancel, loading }) =>
 
   const handleRepoSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const fullName = e.target.value;
-    if (fullName) {
-      const [o, r] = fullName.split('/');
-      setOwner(o);
-      setRepo(r);
-      const selectedRepo = repos.find(rp => rp.full_name === fullName);
-      if (selectedRepo) setBranch(selectedRepo.default_branch);
+    if (!fullName) {
+      setOwner('');
+      setRepo('');
+      return;
     }
+    const [o, r] = fullName.split('/');
+    setOwner(o);
+    setRepo(r);
+    const selectedRepo = repos.find(rp => rp.full_name === fullName);
+    if (selectedRepo) setBranch(selectedRepo.default_branch);
   };
 
   const handleSubmit = async () => {
@@ -845,19 +848,23 @@ const LinkDialog: React.FC<LinkDialogProps> = ({ onLink, onCancel, loading }) =>
             </div>
             <select
               id="repository"
+              value={owner && repo ? `${owner}/${repo}` : ''}
               onChange={handleRepoSelect}
               disabled={loadingRepos}
               className="form-control"
-              size={Math.min(5, filteredRepos.length || 1)}
+              size={Math.min(5, (filteredRepos.length || 1) + 1)}
             >
               {loadingRepos ? (
                 <option value="">Loading repositories...</option>
               ) : filteredRepos.length === 0 ? (
                 <option value="">{searchQuery ? 'No matches found' : 'No repositories'}</option>
               ) : (
-                filteredRepos.map(r => (
-                  <option key={r.full_name} value={r.full_name}>{r.full_name}</option>
-                ))
+                <>
+                  <option value="">Select a repository...</option>
+                  {filteredRepos.map(r => (
+                    <option key={r.full_name} value={r.full_name}>{r.full_name}</option>
+                  ))}
+                </>
               )}
             </select>
           </div>
