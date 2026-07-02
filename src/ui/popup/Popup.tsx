@@ -249,9 +249,9 @@ export const Popup: React.FC = () => {
 
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      const projectId = extractProjectId(tab.url);
+      const projectId = extractProjectId(tab?.url);
 
-      if (!tab.id || !tab.url || !projectId) {
+      if (!tab?.id || !tab.url || !projectId) {
         setError('Open an Overleaf project tab to use Gitleaf.');
         setLoading(false);
         return;
@@ -307,8 +307,8 @@ export const Popup: React.FC = () => {
 
   const refreshActiveTabMeta = useCallback(async (): Promise<ActiveOverleafTab | null> => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    const projectId = extractProjectId(tab.url);
-    if (!tab.id || !tab.url || !projectId) return activeTab;
+    const projectId = extractProjectId(tab?.url);
+    if (!tab?.id || !tab.url || !projectId) return activeTab;
 
     const tabInfo: ActiveOverleafTab = {
       tabId: tab.id, tabUrl: tab.url, projectId,

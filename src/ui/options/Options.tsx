@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { PopupMessage, ServiceWorkerResponse } from '@shared/types';
+import * as Storage from '@background/storage';
 import './options.css';
 
 /* =============================================
@@ -83,21 +84,18 @@ const Options: React.FC = () => {
       }
 
       // Load storage settings
-      const result = await chrome.storage.sync.get(['ignorePatterns', 'defaultBranch']);
-      if (result.ignorePatterns) setIgnorePatterns(result.ignorePatterns);
-      if (result.defaultBranch) setDefaultBranch(result.defaultBranch);
+      setIgnorePatterns(await Storage.getIgnorePatternsText());
+      setDefaultBranch(await Storage.getDefaultBranch());
 
       // Load linked configurations
-      const configs = await chrome.storage.local.get('linkConfigs');
-      if (configs.linkConfigs) {
-        const configEntries = Object.entries(configs.linkConfigs).map(([id, cfg]: [string, Record<string, unknown>]) => ({
-          overleafProjectId: id,
-          overleafProjectName: cfg.overleafProjectName as string | undefined,
-          github: cfg.github as LinkedProject['github'],
-          lastSync: cfg.createdAt as string | undefined,
-        }));
-        setLinkedProjects(configEntries);
-      }
+      const configs = await Storage.getLinkConfigs();
+      const configEntries = Object.entries(configs).map(([id, cfg]) => ({
+        overleafProjectId: id,
+        overleafProjectName: cfg.overleafProjectName,
+        github: cfg.github,
+        lastSync: cfg.createdAt,
+      }));
+      setLinkedProjects(configEntries);
     } catch (err) {
       console.error('Failed to load settings:', err);
     }
@@ -105,10 +103,8 @@ const Options: React.FC = () => {
 
   const saveSettings = async () => {
     try {
-      await chrome.storage.sync.set({
-        ignorePatterns,
-        defaultBranch,
-      });
+      await Storage.setDefaultBranch(defaultBranch);
+      await Storage.setIgnorePatterns(ignorePatterns.split('\n'));
       setStatusMessage({ type: 'success', text: 'Settings saved!' });
       setTimeout(() => setStatusMessage(null), 2500);
     } catch (err) {
@@ -118,7 +114,7 @@ const Options: React.FC = () => {
 
   const disconnectAccount = async () => {
     try {
-      await chrome.storage.local.remove('githubToken');
+      await Storage.clearGitHubToken();
       setAuthenticated(false);
       setGithubLogin(null);
       setStatusMessage({ type: 'success', text: 'Account disconnected' });
@@ -130,13 +126,10 @@ const Options: React.FC = () => {
 
   const removeLink = async (projectId: string) => {
     try {
-      const stored = await chrome.storage.local.get('linkConfigs');
-      const configs = stored.linkConfigs || {};
-      delete configs[projectId];
-      await chrome.storage.local.set({ linkConfigs: configs });
+      await Storage.removeLinkConfig(projectId);
       setLinkedProjects(prev => prev.filter(p => p.overleafProjectId !== projectId));
       // Also remove the manifest
-      await chrome.storage.local.remove(`syncManifest_${projectId}`);
+      await Storage.removeSyncManifest(projectId);
       setStatusMessage({ type: 'success', text: 'Link removed' });
       setTimeout(() => setStatusMessage(null), 2500);
     } catch (err) {

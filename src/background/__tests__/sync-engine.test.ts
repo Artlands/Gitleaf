@@ -279,6 +279,13 @@ describe('Sync engine', () => {
       expect(matchesIgnorePattern('main.tex', '*.log')).toBe(false);
     });
 
+    it('should match directory patterns at any depth', () => {
+      expect(matchesIgnorePattern('sub/.vscode/settings.json', '.vscode/')).toBe(true);
+      expect(matchesIgnorePattern('a/b/output/main.pdf', 'output/')).toBe(true);
+      expect(matchesIgnorePattern('my-output/main.pdf', 'output/')).toBe(false);
+      expect(matchesIgnorePattern('output.tex', 'output/')).toBe(false);
+    });
+
     it('should filter ignored files before planning changes', () => {
       const filtered = filterIgnoredFiles(
         {
