@@ -924,7 +924,7 @@ export async function getProjectMetadata(projectId: string): Promise<OverleafPro
     const csrfToken = extractCSRFTokenFromHtml(html);
 
     // Extract project name from title or data attribute
-    const titleMatch = html.match(/<title>(.+?)\s*-\s*Overleaf<\/title>/);
+    const titleMatch = html.match(/<title>(.+?)\s*-\s*(?:Online LaTeX Editor\s+)?Overleaf<\/title>/i);
     const projectName = titleMatch ? titleMatch[1] : 'Untitled Project';
 
     return {

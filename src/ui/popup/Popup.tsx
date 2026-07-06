@@ -475,66 +475,68 @@ export const Popup: React.FC = () => {
           </div>
         )}
 
-        <div className="project-panel panel">
-          <div>
-            <span className="eyebrow">Overleaf project</span>
-            <h2>{activeTab?.projectName || 'Current project'}</h2>
-          </div>
-          <span className="pill pill--default">Not linked</span>
-        </div>
-
-        <div className="action-panel panel">
-          {!authenticated ? (
-            <>
-              <div className="section-heading">
-                <h3>Connect GitHub</h3>
-                <p>Enter a token with repository access to get started.</p>
-              </div>
-              <div className="input-with-toggle">
-                <input
-                  type={showToken ? 'text' : 'password'}
-                  value={tokenInput}
-                  onChange={(e) => setTokenInput(e.target.value)}
-                  className="form-control"
-                  placeholder="github_pat_..."
-                  onKeyDown={(e) => e.key === 'Enter' && saveToken()}
-                />
-                <button
-                  className="input-toggle-btn"
-                  onClick={() => setShowToken(s => !s)}
-                  title={showToken ? 'Hide token' : 'Show token'}
-                >
-                  {showToken ? <EyeOffIcon /> : <EyeIcon />}
-                </button>
-              </div>
-              <button
-                onClick={saveToken}
-                disabled={syncing === 'token' || !tokenInput.trim()}
-                className="btn btn-primary full-width"
-              >
-                {syncing === 'token' ? 'Saving...' : 'Save Token'}
-              </button>
-            </>
-          ) : (
-            <>
-              <div className="section-heading">
-                <h3>Choose a repository</h3>
-                <p>Link this Overleaf project to a GitHub repo and branch.</p>
-              </div>
-              <button onClick={() => setShowLinkDialog(true)} className="btn btn-primary full-width">
-                <SyncIcon />
-                Link to GitHub
-              </button>
-            </>
-          )}
-        </div>
-
-        {showLinkDialog && (
-          <LinkDialog
+        {showLinkDialog ? (
+          <LinkForm
             onLink={handleLink}
             onCancel={() => setShowLinkDialog(false)}
             loading={syncing === 'link'}
           />
+        ) : (
+          <>
+            <div className="project-panel panel">
+              <div>
+                <span className="eyebrow">Overleaf project</span>
+                <h2>{activeTab?.projectName || 'Current project'}</h2>
+              </div>
+              <span className="pill pill--default">Not linked</span>
+            </div>
+
+            <div className="action-panel panel">
+              {!authenticated ? (
+                <>
+                  <div className="section-heading">
+                    <h3>Connect GitHub</h3>
+                    <p>Enter a token with repository access to get started.</p>
+                  </div>
+                  <div className="input-with-toggle">
+                    <input
+                      type={showToken ? 'text' : 'password'}
+                      value={tokenInput}
+                      onChange={(e) => setTokenInput(e.target.value)}
+                      className="form-control"
+                      placeholder="github_pat_..."
+                      onKeyDown={(e) => e.key === 'Enter' && saveToken()}
+                    />
+                    <button
+                      className="input-toggle-btn"
+                      onClick={() => setShowToken(s => !s)}
+                      title={showToken ? 'Hide token' : 'Show token'}
+                    >
+                      {showToken ? <EyeOffIcon /> : <EyeIcon />}
+                    </button>
+                  </div>
+                  <button
+                    onClick={saveToken}
+                    disabled={syncing === 'token' || !tokenInput.trim()}
+                    className="btn btn-primary full-width"
+                  >
+                    {syncing === 'token' ? 'Saving...' : 'Save Token'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="section-heading">
+                    <h3>Choose a repository</h3>
+                    <p>Link this Overleaf project to a GitHub repo and branch.</p>
+                  </div>
+                  <button onClick={() => setShowLinkDialog(true)} className="btn btn-primary full-width">
+                    <SyncIcon />
+                    Link to GitHub
+                  </button>
+                </>
+              )}
+            </div>
+          </>
         )}
       </PopupShell>
     );
@@ -555,103 +557,104 @@ export const Popup: React.FC = () => {
         </div>
       )}
 
-      <div className="project-panel panel">
-        <div>
-          <span className="eyebrow">Overleaf project</span>
-          <h2>{activeTab?.projectName || 'Current project'}</h2>
-        </div>
-        <span className="pill pill--success">
-          <span className="status-dot status-dot--success" />
-          Linked
-        </span>
-      </div>
-
-      <div className="link-info panel">
-        <div className="repo-row">
-          <div className="repo-icon"><GitHubIcon /></div>
-          <div>
-            <div className="link-badge">{config.github.owner}/{config.github.repo}</div>
-            <div className="sync-info">Branch {config.github.branch}</div>
-          </div>
-        </div>
-        <div className="meta-grid">
-          <div className="meta-cell">
-            <span>Subfolder</span>
-            <strong>{config.github.subPath || 'Repository root'}</strong>
-          </div>
-          <div className="meta-cell">
-            <span>Last sync</span>
-            <strong>{lastSyncDate}</strong>
-          </div>
-        </div>
-      </div>
-
-      {syncing && (
-        <div className="sync-progress">
-          <div className="sync-progress-bar"><div className="sync-progress-fill" /></div>
-          <span className="sync-progress-text">
-            {syncing === 'push' ? 'Pushing...' : syncing === 'pull' ? 'Pulling...' : 'Syncing...'}
-          </span>
-        </div>
-      )}
-
-      <div className="action-panel panel">
-        <div className="button-group">
-          <button
-            onClick={handlePush}
-            disabled={syncing !== null || previewLoading !== null}
-            className="btn btn-primary"
-            title="Preview and push Overleaf changes to GitHub"
-          >
-            <SyncIcon />
-            {previewLoading === 'push' ? 'Checking...' : syncing === 'push' ? 'Pushing...' : 'Push'}
-          </button>
-          <button
-            onClick={handlePull}
-            disabled={syncing !== null || previewLoading !== null}
-            className="btn btn-secondary"
-            title="Preview and pull GitHub changes to Overleaf"
-          >
-            {previewLoading === 'pull' ? 'Checking...' : syncing === 'pull' ? 'Pulling...' : 'Pull'}
-          </button>
-        </div>
-        <div className="footer-buttons">
-          <button
-            onClick={() => setShowLinkDialog(true)}
-            disabled={syncing !== null || previewLoading !== null}
-            className="btn-text"
-          >
-            Change repository
-          </button>
-        </div>
-      </div>
-
-      {showLinkDialog && (
-        <LinkDialog
+      {showLinkDialog ? (
+        <LinkForm
           onLink={handleLink}
           onCancel={() => setShowLinkDialog(false)}
           loading={syncing === 'link'}
         />
-      )}
-
-      {pendingPreview && (
-        <SyncPreviewDialog
+      ) : pendingPreview ? (
+        <SyncPreviewPanel
           direction={pendingPreview.direction}
           preview={pendingPreview.preview}
           loading={syncing === pendingPreview.direction}
           onConfirm={confirmSync}
           onCancel={cancelPreview}
         />
+      ) : (
+        <>
+          <div className="project-panel panel">
+            <div>
+              <span className="eyebrow">Overleaf project</span>
+              <h2>{activeTab?.projectName || 'Current project'}</h2>
+            </div>
+            <span className="pill pill--success">
+              <span className="status-dot status-dot--success" />
+              Linked
+            </span>
+          </div>
+
+          <div className="link-info panel">
+            <div className="repo-row">
+              <div className="repo-icon"><GitHubIcon /></div>
+              <div>
+                <div className="link-badge">{config.github.owner}/{config.github.repo}</div>
+                <div className="sync-info">Branch {config.github.branch}</div>
+              </div>
+            </div>
+            <div className="meta-grid">
+              <div className="meta-cell">
+                <span>Subfolder</span>
+                <strong>{config.github.subPath || 'Repository root'}</strong>
+              </div>
+              <div className="meta-cell">
+                <span>Last sync</span>
+                <strong>{lastSyncDate}</strong>
+              </div>
+            </div>
+          </div>
+
+          {syncing && (
+            <div className="sync-progress">
+              <div className="sync-progress-bar"><div className="sync-progress-fill" /></div>
+              <span className="sync-progress-text">
+                {syncing === 'push' ? 'Pushing...' : syncing === 'pull' ? 'Pulling...' : 'Syncing...'}
+              </span>
+            </div>
+          )}
+
+          <div className="action-panel panel">
+            <div className="button-group">
+              <button
+                onClick={handlePush}
+                disabled={syncing !== null || previewLoading !== null}
+                className="btn btn-primary"
+                title="Preview and push Overleaf changes to GitHub"
+              >
+                <SyncIcon />
+                {previewLoading === 'push' ? 'Checking...' : syncing === 'push' ? 'Pushing...' : 'Push'}
+              </button>
+              <button
+                onClick={handlePull}
+                disabled={syncing !== null || previewLoading !== null}
+                className="btn btn-secondary"
+                title="Preview and pull GitHub changes to Overleaf"
+              >
+                <SyncIcon />
+                {previewLoading === 'pull' ? 'Checking...' : syncing === 'pull' ? 'Pulling...' : 'Pull'}
+              </button>
+            </div>
+            <div className="footer-buttons">
+              <button
+                onClick={() => setShowLinkDialog(true)}
+                disabled={syncing !== null || previewLoading !== null}
+                className="btn-text"
+              >
+                Change repository
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </PopupShell>
   );
 };
 
 /* =============================================
-   Sync Preview Dialog
+   Sync Preview Panel
    ============================================= */
 
-interface SyncPreviewDialogProps {
+interface SyncPreviewPanelProps {
   direction: 'push' | 'pull';
   preview: SyncPreview;
   loading: boolean;
@@ -659,7 +662,7 @@ interface SyncPreviewDialogProps {
   onCancel: () => void;
 }
 
-const SyncPreviewDialog: React.FC<SyncPreviewDialogProps> = ({
+const SyncPreviewPanel: React.FC<SyncPreviewPanelProps> = ({
   direction,
   preview,
   loading,
@@ -677,48 +680,48 @@ const SyncPreviewDialog: React.FC<SyncPreviewDialogProps> = ({
       : 'Files will be written to your Overleaf project. Deletions cannot be undone.';
 
   return (
-    <div className="dialog-overlay">
-      <div className="dialog sync-preview-dialog">
-        <div className="dialog-header">
-          <h2>{headline}</h2>
+    <>
+      <div className="action-panel panel">
+        <div className="section-heading">
+          <h3>{headline}</h3>
           <p>{subline}</p>
         </div>
 
-        <div className="dialog-body">
-          {total === 0 ? (
-            <p className="preview-empty">No changes detected — nothing to {direction}.</p>
-          ) : (
-            <>
-              <div className="preview-summary">
-                <span className="preview-pill preview-pill--add">+{preview.added.length} added</span>
-                <span className="preview-pill preview-pill--mod">~{preview.modified.length} modified</span>
-                <span className="preview-pill preview-pill--del">−{preview.deleted.length} deleted</span>
-              </div>
-              <div className="preview-list">
-                {preview.added.map((p) => (
-                  <div key={`a-${p}`} className="preview-row">
-                    <span className="preview-marker preview-marker--add">+</span>
-                    <span className="preview-path">{p}</span>
-                  </div>
-                ))}
-                {preview.modified.map((p) => (
-                  <div key={`m-${p}`} className="preview-row">
-                    <span className="preview-marker preview-marker--mod">~</span>
-                    <span className="preview-path">{p}</span>
-                  </div>
-                ))}
-                {preview.deleted.map((p) => (
-                  <div key={`d-${p}`} className="preview-row">
-                    <span className="preview-marker preview-marker--del">−</span>
-                    <span className="preview-path">{p}</span>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
+        {total === 0 ? (
+          <p className="preview-empty">No changes detected — nothing to {direction}.</p>
+        ) : (
+          <>
+            <div className="preview-summary">
+              <span className="preview-pill preview-pill--add">+{preview.added.length} added</span>
+              <span className="preview-pill preview-pill--mod">~{preview.modified.length} modified</span>
+              <span className="preview-pill preview-pill--del">−{preview.deleted.length} deleted</span>
+            </div>
+            <div className="preview-list">
+              {preview.added.map((p) => (
+                <div key={`a-${p}`} className="preview-row">
+                  <span className="preview-marker preview-marker--add">+</span>
+                  <span className="preview-path">{p}</span>
+                </div>
+              ))}
+              {preview.modified.map((p) => (
+                <div key={`m-${p}`} className="preview-row">
+                  <span className="preview-marker preview-marker--mod">~</span>
+                  <span className="preview-path">{p}</span>
+                </div>
+              ))}
+              {preview.deleted.map((p) => (
+                <div key={`d-${p}`} className="preview-row">
+                  <span className="preview-marker preview-marker--del">−</span>
+                  <span className="preview-path">{p}</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
 
-        <div className="dialog-buttons">
+      <div className="action-panel panel">
+        <div className="button-group">
           <button onClick={onCancel} disabled={loading} className="btn btn-secondary">
             Cancel
           </button>
@@ -737,21 +740,21 @@ const SyncPreviewDialog: React.FC<SyncPreviewDialogProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
 /* =============================================
-   Link Dialog
+   Link Form
    ============================================= */
 
-interface LinkDialogProps {
+interface LinkFormProps {
   onLink: (owner: string, repo: string, branch: string, subPath: string) => Promise<void>;
   onCancel: () => void;
   loading: boolean;
 }
 
-const LinkDialog: React.FC<LinkDialogProps> = ({ onLink, onCancel, loading }) => {
+const LinkForm: React.FC<LinkFormProps> = ({ onLink, onCancel, loading }) => {
   const [owner, setOwner] = useState('');
   const [repo, setRepo] = useState('');
   const [branch, setBranch] = useState('main');
@@ -806,10 +809,10 @@ const LinkDialog: React.FC<LinkDialogProps> = ({ onLink, onCancel, loading }) =>
   };
 
   return (
-    <div className="dialog-overlay">
-      <div className="dialog">
-        <div className="dialog-header">
-          <h2>Link repository</h2>
+    <>
+      <div className="action-panel panel">
+        <div className="section-heading">
+          <h3>Link repository</h3>
           <p>Connect your Overleaf project to a GitHub repository.</p>
         </div>
 
@@ -830,78 +833,78 @@ const LinkDialog: React.FC<LinkDialogProps> = ({ onLink, onCancel, loading }) =>
           </div>
         </div>
 
-        <div className="dialog-body">
-          <div className="form-group">
-            <label htmlFor="repository">Repository</label>
-            <div className="repo-search">
-              <span className="repo-search-icon">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                </svg>
-              </span>
-              <input
-                className="form-control repo-search-input"
-                placeholder="Search repositories..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <select
-              id="repository"
-              value={owner && repo ? `${owner}/${repo}` : ''}
-              onChange={handleRepoSelect}
-              disabled={loadingRepos}
-              className="form-control"
-              size={Math.min(5, (filteredRepos.length || 1) + 1)}
-            >
-              {loadingRepos ? (
-                <option value="">Loading repositories...</option>
-              ) : filteredRepos.length === 0 ? (
-                <option value="">{searchQuery ? 'No matches found' : 'No repositories'}</option>
-              ) : (
-                <>
-                  <option value="">Select a repository...</option>
-                  {filteredRepos.map(r => (
-                    <option key={r.full_name} value={r.full_name}>{r.full_name}</option>
-                  ))}
-                </>
-              )}
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="branch">Branch</label>
+        <div className="form-group">
+          <label htmlFor="repository">Repository</label>
+          <div className="repo-search">
+            <span className="repo-search-icon">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+            </span>
             <input
-              id="branch"
-              type="text"
-              value={branch}
-              onChange={(e) => setBranch(e.target.value)}
-              className="form-control"
-              placeholder="main"
+              className="form-control repo-search-input"
+              placeholder="Search repositories..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-
-          <div className="form-group">
-            <label htmlFor="subPath">Subfolder (optional)</label>
-            <input
-              id="subPath"
-              type="text"
-              value={subPath}
-              onChange={(e) => setSubPath(e.target.value)}
-              className="form-control"
-              placeholder="paper/"
-            />
-          </div>
+          <select
+            id="repository"
+            value={owner && repo ? `${owner}/${repo}` : ''}
+            onChange={handleRepoSelect}
+            disabled={loadingRepos}
+            className="form-control"
+            size={Math.min(5, (filteredRepos.length || 1) + 1)}
+          >
+            {loadingRepos ? (
+              <option value="">Loading repositories...</option>
+            ) : filteredRepos.length === 0 ? (
+              <option value="">{searchQuery ? 'No matches found' : 'No repositories'}</option>
+            ) : (
+              <>
+                <option value="">Select a repository...</option>
+                {filteredRepos.map(r => (
+                  <option key={r.full_name} value={r.full_name}>{r.full_name}</option>
+                ))}
+              </>
+            )}
+          </select>
         </div>
 
-        <div className="dialog-buttons">
+        <div className="form-group">
+          <label htmlFor="branch">Branch</label>
+          <input
+            id="branch"
+            type="text"
+            value={branch}
+            onChange={(e) => setBranch(e.target.value)}
+            className="form-control"
+            placeholder="main"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="subPath">Subfolder (optional)</label>
+          <input
+            id="subPath"
+            type="text"
+            value={subPath}
+            onChange={(e) => setSubPath(e.target.value)}
+            className="form-control"
+            placeholder="paper/"
+          />
+        </div>
+      </div>
+
+      <div className="action-panel panel">
+        <div className="button-group">
           <button onClick={onCancel} disabled={loading} className="btn btn-secondary">Cancel</button>
           <button onClick={handleSubmit} disabled={loading || !owner || !repo} className="btn btn-primary">
             {loading ? 'Linking...' : 'Link Project'}
           </button>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

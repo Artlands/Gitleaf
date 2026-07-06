@@ -17,9 +17,9 @@ function extractProjectId(): string | null {
  * Extract project name from the page title or HTML
  */
 function extractProjectName(): string {
-  // Try to get from document title (usually "Project Name - Overleaf")
+  // Overleaf's tab title is usually "Project Name - Online LaTeX Editor Overleaf"
   const title = document.title;
-  const match = title.match(/^(.+?)\s*-\s*Overleaf/);
+  const match = title.match(/^(.+?)\s*-\s*(?:Online LaTeX Editor\s+)?Overleaf/i);
   if (match) {
     return match[1];
   }
