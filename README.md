@@ -1,5 +1,7 @@
 # Gitleaf
 
+**Current version:** [v0.2.0](https://github.com/Artlands/Gitleaf/releases/tag/v0.2.0)
+
 > Sync Overleaf projects with GitHub repositories — no premium Overleaf subscription required.
 
 Gitleaf is a Chrome extension that bridges [Overleaf](https://www.overleaf.com) (online LaTeX editor) and [GitHub](https://github.com). It lets you preview and push your Overleaf project to a GitHub repo (or a subfolder of one), and preview and pull files back into Overleaf — all from your browser, with no external server.
